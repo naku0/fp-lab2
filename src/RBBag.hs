@@ -17,6 +17,7 @@ module RBBag (
     filterTree,
     foldlTree,
     foldrTree,
+    (?=), (?/=), (?>), (?<), (?>=), (?<=),
 ) where
 
 import Data.Monoid
@@ -88,6 +89,30 @@ mapTree f = foldrTree (\x acc -> add (f x) acc) empty
 filterTree :: (Ord a) => (a -> Bool) -> RBBag a -> RBBag a
 filterTree pred = foldrTree (\x acc -> if pred x then add x acc else acc) empty
 
+(?=) :: (Ord a) => RBBag a -> RBBag a -> Bool
+tree1 ?= tree2 = comp tree1 tree2 == EQ
+
+(?/=) :: (Ord a) => RBBag a -> RBBag a -> Bool
+tree1 ?/= tree2 = comp tree1 tree2 /= EQ
+
+(?<) :: (Ord a) => RBBag a -> RBBag a -> Bool
+tree1 ?< tree2 = comp tree1 tree2 == LT
+
+(?>) :: (Ord a) => RBBag a -> RBBag a -> Bool
+tree1 ?> tree2 = comp tree1 tree2 == GT
+
+(?<=) :: (Ord a) => RBBag a -> RBBag a -> Bool
+tree1 ?<= tree2 = case comp tree1 tree2 of
+    LT -> True
+    EQ -> True
+    GT -> False
+
+(?>=) :: (Ord a) => RBBag a -> RBBag a -> Bool
+tree1 ?>= tree2 = case comp tree1 tree2 of
+    GT -> True
+    EQ -> True
+    LT -> False
+
 isEmpty :: RBBag a -> Bool
 isEmpty Empty = True
 isEmpty _     = False
@@ -152,6 +177,20 @@ delR x (Node color val left right) = balance color val left (del x right)
 balanceMerge :: RBBag a -> RBBag a
 balanceMerge Empty = Empty
 balanceMerge (Node color val left right) = balance color val left right
+
+comp :: (Ord a) => RBBag a -> RBBag a -> Ordering
+comp Empty Empty = EQ
+comp _ Empty = GT
+comp Empty _ = LT
+comp tree1 tree2 = 
+    case (extractMin tree1, extractMin tree2) of
+            (Just (x, rest1), Just (y, rest2)) ->
+                case compare x y of
+                    EQ -> comp rest1 rest2
+                    cmp -> cmp
+            (Nothing, Just _) -> LT
+            (Just _, Nothing) -> GT
+            (Nothing, Nothing) -> EQ
 
 drawTree :: Show a => RBBag a -> String
 drawTree Empty = "Empty"
