@@ -1,12 +1,11 @@
 module Main (main) where
 
-import RBBag
+import RBBag ( add, empty, logTree, mapTree, RBBag )
 
-bag1 = add 3 $ add 1 $ add 2 empty
-bag2 = add 3 $ add 1 $ add 2 empty
+bag1 :: RBBag.RBBag Integer
+bag1 = add 3 $ add (-1) $ add (-2) empty
 
 main :: IO ()
 main = do
     logTree bag1
-    logTree bag2
-    print $ bag1 ?= bag2
+    logTree $ mapTree abs bag1

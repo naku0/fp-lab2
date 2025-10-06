@@ -1,17 +1,17 @@
 module RBBag (
-    RBBag, 
-    empty, 
-    add, 
-    delete, 
-    union, 
-    size, 
-    contains, 
-    count, 
-    logTree, 
+    RBBag,
+    empty,
+    add,
+    delete,
+    union,
+    size,
+    contains,
+    count,
+    logTree,
     delete',
-    isEmpty, 
-    balance, 
-    fuse, 
+    isEmpty,
+    balance,
+    fuse,
     extractMin,
     mapTree,
     filterTree,
@@ -20,8 +20,8 @@ module RBBag (
     (?=), (?/=), (?>), (?<), (?>=), (?<=),
 ) where
 
-import Data.Monoid
-import Data.Semigroup
+import Data.Monoid()
+import Data.Semigroup()
 
 data Color = Red | Black deriving (Show, Eq)
 data RBBag a = Empty | Node Color a (RBBag a) (RBBag a) deriving (Show, Eq)
@@ -45,7 +45,7 @@ delete' x t = makeBlack $ annihilate x t
 union :: (Ord a) => RBBag a -> RBBag a -> RBBag a
 union Empty bag = bag
 union bag Empty = bag
-union (Node _ val left right) bag2 = add val (union left (union right bag2))
+union (Node _ val left right) bag2 = add val (left `union` (right `union` bag2))
 
 size :: RBBag a -> Int
 size Empty = 0
@@ -84,10 +84,10 @@ foldrTree _ acc Empty = acc
 foldrTree f acc (Node _ val left right) = foldrTree f (f val (foldrTree f acc left)) right
 
 mapTree :: (Ord b) => (a -> b) -> RBBag a -> RBBag b
-mapTree f = foldrTree (\x acc -> add (f x) acc) empty
+mapTree f = foldrTree (add . f) empty
 
 filterTree :: (Ord a) => (a -> Bool) -> RBBag a -> RBBag a
-filterTree pred = foldrTree (\x acc -> if pred x then add x acc else acc) empty
+filterTree predr = foldrTree (\x acc -> if predr x then add x acc else acc) empty
 
 (?=) :: (Ord a) => RBBag a -> RBBag a -> Bool
 tree1 ?= tree2 = comp tree1 tree2 == EQ
@@ -138,14 +138,14 @@ fuse t1 t2 = case extractMin t2 of
 extractMin :: RBBag a -> Maybe (a, RBBag a)
 extractMin Empty = Nothing
 extractMin (Node _ val Empty right) = Just (val, right)
-extractMin (Node color val left right) = 
+extractMin (Node color val left right) =
     case extractMin left of
         Just (minVal, left') -> Just (minVal, balance color val left' right)
         Nothing -> Nothing
 
 -- api backend
 
-ins :: Ord a => a -> RBBag a -> RBBag a  
+ins :: Ord a => a -> RBBag a -> RBBag a
 ins x Empty = Node Red x Empty Empty
 ins x (Node color y left right)
     | x < y     = balance color y (ins x left) right
@@ -182,7 +182,7 @@ comp :: (Ord a) => RBBag a -> RBBag a -> Ordering
 comp Empty Empty = EQ
 comp _ Empty = GT
 comp Empty _ = LT
-comp tree1 tree2 = 
+comp tree1 tree2 =
     case (extractMin tree1, extractMin tree2) of
             (Just (x, rest1), Just (y, rest2)) ->
                 case compare x y of
@@ -199,7 +199,7 @@ drawTree tree = unlines (draw tree True "")
     draw Empty _ _ = []
     draw (Node color val left right) isRight indent =
         let (symbol, nextIndent) = if isRight then ("┌── ", indent ++ "│   ") else ("└── ", indent ++ "    ")
-            colorStr = case color of 
+            colorStr = case color of
                 Red -> "🔴 "
                 Black -> "⚫ "
             nodeLine = indent ++ symbol ++ colorStr ++ show val
