@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
+
 module RBBag
   ( RBBag,
     empty,
@@ -30,6 +33,7 @@ where
 
 import Data.Monoid ()
 import Data.Semigroup ()
+import Test.QuickCheck (Arbitrary (arbitrary, shrink), Gen, listOf)
 
 data Color = Red | Black deriving (Show, Eq)
 
@@ -235,3 +239,15 @@ drawTree tree = unlines (draw tree True "")
           leftLines = draw left False nextIndent
           rightLines = draw right True nextIndent
        in rightLines ++ [nodeLine] ++ leftLines
+
+-- for tests (to pass through orphan warning)
+instance (Ord a, Arbitrary a) => Arbitrary (RBBag a) where
+  arbitrary = do
+    elementsList <- listOf arbitrary
+    return $ foldr add empty elementsList
+
+  shrink bag =
+    map listToBag (shrink (bagToList bag))
+    where
+      bagToList = foldrTree (:) []
+      listToBag = foldr add empty

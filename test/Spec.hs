@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
@@ -26,8 +27,11 @@ import RBBag
     (?>=),
   )
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
-import Test.Hspec.QuickCheck ()
+import Test.Hspec.QuickCheck (prop)
 import Test.QuickCheck ()
+
+toMultiset :: RBBag a -> [a]
+toMultiset = foldrTree (:) []
 
 main :: IO ()
 main = hspec spec
@@ -150,20 +154,22 @@ spec = do
         contains charBag 'a' `shouldBe` True
         contains stringBag "hello" `shouldBe` True
 
-    describe "Property-based tests - Monoid properties" $ do
-      it "left identity: empty <> x == x" $ do
-        let bag = add 1 $ add 2 empty
-        (empty <> bag) `shouldBe` bag
+    describe "Property-based tests with Arbitrary" $ do
+        describe "Monoid laws" $ do
+            prop "left identity: empty <> x == x" $
+                \(bag :: RBBag Int) -> empty <> bag == bag
 
-      it "right identity: x <> empty == x" $ do
-        let bag = add 1 $ add 2 empty
-        (bag <> empty) `shouldBe` bag
+            prop "right identity: x <> empty == x" $
+                \(bag :: RBBag Int) -> bag <> empty == bag
 
-      it "associativity: (x <> y) <> z == x <> (y <> z)" $ do
-        let x = add 1 $ add 2 empty
-        let y = add 2 $ add 3 empty
-        let z = add 3 $ add 4 empty
-        ((x <> y) <> z) `shouldBe` (x <> (y <> z))
+            prop "commutativity: x <> y == y <> x" $
+                \(x :: RBBag Int) (y :: RBBag Int) -> toMultiset (x <> y) == toMultiset (y <> x)
+
+            prop "associativity: (x <> y) <> z == x <> (y <> z)" $
+                \(x :: RBBag Int) (y :: RBBag Int) (z :: RBBag Int) ->
+                    let left = (x <> y) <> z
+                        right = x <> (y <> z)
+                    in toMultiset left == toMultiset right
 
     describe "Additional simple test" $ do
       it "union with empty is identity" $ do

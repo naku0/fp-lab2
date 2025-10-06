@@ -25,6 +25,6 @@ jobs:
             - name: Run HLint
               run: stack exec -- hlint .
               
-            - name: Check formatting with Fourmolu
+            - name: Check formatting with ormolu
               run: |
-                  stack exec -- ormolu --mode check .
+                find . -name "*.hs" -exec stack exec -- ormolu --mode check {} \;
